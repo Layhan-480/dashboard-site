@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Productivity Dashboard</title>
+  <style>
+    :root {
+      --bg: #f4f4f9;
+      --text: #222;
+      --primary: #4e73df;
+      --card-bg: #fff;
+      --shadow: rgba(0,0,0,0.1);
+
+      --dark-bg: #1e1e2f;
+      --dark-text: #f4f4f9;
+      --dark-card: #2a2a3d;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      display: grid;
+      grid-template-columns: 250px 1fr;
+      grid-template-rows: 60px 1fr;
+      grid-template-areas:
+        "sidebar header"
+        "sidebar main";
+      height: 100vh;
+      transition: background 0.3s, color 0.3s;
+    }
+    body.dark {
+      --bg: var(--dark-bg);
+      --text: var(--dark-text);
+      --card-bg: var(--dark-card);
+    }
+
+    header {
+      grid-area: header;
+      background: var(--card-bg);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 1rem;
+      box-shadow: 0 2px 5px var(--shadow);
+    }
+    header h1 {
+      font-size: 1.2rem;
+    }
+
+    .sidebar {
+      grid-area: sidebar;
+      background: var(--card-bg);
+      padding: 1rem;
+      box-shadow: 2px 0 5px var(--shadow);
+      transition: transform 0.3s;
+    }
+    .sidebar nav a {
+      display: block;
+      padding: 0.5rem 0;
+      color: var(--text);
+      text-decoration: none;
+      font-weight: bold;
+      cursor: pointer;
+    }
+    .sidebar nav a.active {
+      color: var(--primary);
+    }
+    .sidebar nav a:hover {
+      color: var(--primary);
+    }
+
+    main {
+      grid-area: main;
+      padding: 1rem;
+      overflow-y: auto;
+    }
+
+    .card {
+      background: var(--card-bg);
+      padding: 1rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px var(--shadow);
+      margin-bottom: 1rem;
+      transition: transform 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+    }
+
+    button {
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 0.5rem 1rem;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #3752c9;
+    }
+
+    .task-list {
+      list-style: none;
+      padding: 0;
+    }
+    .task-list li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.5rem;
+      border-bottom: 1px solid #ddd;
+    }
+    .task-list li span {
+      flex: 1;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      padding: 2rem;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px var(--shadow);
+      width: 300px;
+      max-width: 90%;
+    }
+    .modal-content form {
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+    input, select {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      body {
+        grid-template-columns: 1fr;
+        grid-template-rows: 60px 1fr;
+        grid-template-areas:
+          "header"
+          "main";
+      }
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 200px;
+        z-index: 1000;
+        transform: translateX(-100%);
+      }
+      .sidebar.show {
+        transform: translateX(0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <button id="menuToggle">☰</button>
+    <h1 id="pageTitle">Dashboard</h1>
+    <button id="themeToggle">🌙</button>
+  </header>
+
+  <aside class="sidebar" id="sidebar">
+    <nav>
+      <a data-page="dashboard" class="active">🏠 Dashboard</a>
+      <a data-page="tasks">📝 Tasks</a>
+      <a data-page="habits">📊 Habits</a>
+      <a data-page="settings">⚙️ Settings</a>
+    </nav>
+  </aside>
+
+  <main>
+    <!-- Dashboard -->
+    <section id="dashboard" class="page">
+      <div class="card">
+        <h2>Welcome</h2>
+        <p>This is your productivity dashboard. Use the sidebar to navigate.</p>
+      </div>
+      <div class="card">
+        <h2>Quick Stats</h2>
+        <p>📌 Tasks Pending: <strong>5</strong></p>
+        <p>🔥 Habits Streak: <strong>7 days</strong></p>
+      </div>
+    </section>
+
+    <!-- Tasks -->
+    <section id="tasks" class="page" style="display:none;">
+      <div class="card">
+        <h2>Task Manager</h2>
+        <button id="addTaskBtn">+ Add Task</button>
+        <ul class="task-list" id="taskList"></ul>
+      </div>
+    </section>
+
+    <!-- Habits -->
+    <section id="habits" class="page" style="display:none;">
+      <div class="card">
+        <h2>Habit Tracker</h2>
+        <p>Reading</p>
+        <progress value="70" max="100"></progress>
+        <p>Exercise</p>
+        <progress value="50" max="100"></progress>
+        <p>Meditation</p>
+        <progress value="30" max="100"></progress>
+      </div>
+    </section>
+
+    <!-- Settings -->
+    <section id="settings" class="page" style="display:none;">
+      <div class="card">
+        <h2>Preferences</h2>
+        <button id="themeToggleSecondary">Toggle Dark Mode</button>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div class="modal" id="taskModal">
+    <div class="modal-content">
+      <h3>New Task</h3>
+      <form id="taskForm">
+        <input type="text" id="taskInput" placeholder="Task name" required>
+        <select id="taskPriority">
+          <option value="Low">Low Priority</option>
+          <option value="Medium">Medium Priority</option>
+          <option value="High">High Priority</option>
+        </select>
+        <button type="submit">Add Task</button>
+        <button type="button" id="closeModal">Cancel</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const sidebar = document.getElementById('sidebar');
+    const menuToggle = document.getElementById('menuToggle');
+    const themeToggle = document.getElementById('themeToggle');
+    const body = document.body;
+    const pageTitle = document.getElementById('pageTitle');
+
+    // Sidebar toggle (mobile)
+    menuToggle.addEventListener('click', () => {
+      sidebar.classList.toggle('show');
+    });
+
+    // Theme toggle
+    function setTheme(dark) {
+      if (dark) {
+        body.classList.add('dark');
+        themeToggle.textContent = '☀️';
+      } else {
+        body.classList.remove('dark');
+        themeToggle.textContent = '🌙';
+      }
+    }
+    themeToggle.addEventListener('click', () => {
+      const dark = !body.classList.contains('dark');
+      setTheme(dark);
+      localStorage.setItem('theme', dark ? 'dark' : 'light');
+    });
+    document.getElementById('themeToggleSecondary').addEventListener('click', () => {
+      themeToggle.click();
+    });
+    if (localStorage.getItem('theme') === 'dark') setTheme(true);
+
+    // Navigation
+    document.querySelectorAll('.sidebar nav a').forEach(link => {
+      link.addEventListener('click', () => {
+        document.querySelectorAll('.page').forEach(page => page.style.display = 'none');
+        document.getElementById(link.dataset.page).style.display = 'block';
+
+        document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+        link.classList.add('active');
+        pageTitle.textContent = link.textContent.replace(/^[^ ]+ /,'');
+        sidebar.classList.remove('show');
+      });
+    });
+
+    // Task modal
+    const taskModal = document.getElementById('taskModal');
+    const addTaskBtn = document.getElementById('addTaskBtn');
+    const closeModal = document.getElementById('closeModal');
+    const taskForm = document.getElementById('taskForm');
+    const taskList = document.getElementById('taskList');
+
+    if(addTaskBtn){
+      addTaskBtn.addEventListener('click', () => {
+        taskModal.style.display = 'flex';
+      });
+      closeModal.addEventListener('click', () => {
+        taskModal.style.display = 'none';
+      });
+      window.addEventListener('click', (e) => {
+        if (e.target === taskModal) taskModal.style.display = 'none';
+      });
+
+      taskForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const taskText = document.getElementById('taskInput').value;
+        const priority = document.getElementById('taskPriority').value;
+
+        const li = document.createElement('li');
+        li.innerHTML = `<span>${taskText} - <em>${priority}</em></span>
+                        <button class="deleteBtn">✖</button>`;
+        taskList.appendChild(li);
+
+        li.querySelector('.deleteBtn').addEventListener('click', () => {
+          li.remove();
+        });
+
+        taskForm.reset();
+        taskModal.style.display = 'none';
+      });
+    }
+  </script>
+</body>
+</html>
+
